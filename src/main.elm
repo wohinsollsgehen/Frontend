@@ -1,6 +1,7 @@
 import Browser
 import Html
 import Html.Attributes as HTMLATTR
+import Html.Events as HEv
 import Http
 import Json.Decode as JSD
 import Time
@@ -10,41 +11,47 @@ import Time
 main = Browser.element {init = init, update = update, view = view, subscriptions = subscr}
 
 -- MODEL
-type Order = Alphabetic | Pressure
+
 type alias Location = {name : String, pressure : Float, imgurl : String}
 
-locationToString : Location -> String
-locationToString loc = 
-  loc.name ++ " " ++ String.fromFloat loc.pressure
-
-type alias LocData = {locations : (List Location), order : Order}
+type LocData = Loading | Failed String | Success (List Location)
 
 jsonDataRequest = Http.get
       { url = "http://localhost:8000/sample.json"
-      , expect = Http.expectJson ReceivedLocations locationListDecoder  
+      , expect = Http.expectJson ReceivedLocations locationListDecoder
       }
 
-type Model = Loading | Failed String | Success LocData 
+type alias Model =
+  { sort : List Location -> List Location
+  , locations : LocData
+  }
+
 init : () -> (Model, Cmd Msg)
-init _ = (Loading, jsonDataRequest)
+init _ = ( { sort = List.sortBy .name, locations = Loading }
+         , jsonDataRequest
+         )
 
 
 -- UPDATE
-type Msg = ReceivedLocations (Result Http.Error (List Location)) | Tick Time.Posix 
+type Msg = ReceivedLocations (Result Http.Error (List Location))
+         | Tick Time.Posix
+         | SortByChanged String
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
     ReceivedLocations (Ok locations) ->
-          (Success {locations = locations, order = Pressure}, Cmd.none)
+          ({model | locations = Success locations }, Cmd.none)
     ReceivedLocations (Err _) ->
-          (Failed "An error occurred while loading the json.", Cmd.none)
+          ({model | locations = Failed "An error occurred while loading the json." }, Cmd.none)
     Tick time ->
       (model, jsonDataRequest)
+    SortByChanged value ->
+      ({model | sort = sortFromValue value}, Cmd.none)
 
 
 -- SUBSCRIPTIONS
 subscr: Model -> Sub Msg
-subscr mdl = 
+subscr mdl =
   Time.every 15 Tick
 
 
@@ -59,38 +66,42 @@ locationToHtml loc =
              [Html.text (String.fromFloat loc.pressure)]
   ]
 
+sortFromValue : String -> List Location -> List Location
+sortFromValue str = case str of
+    "pressure" -> List.sortBy .pressure
+    _ ->  List.sortBy .name
+
 locationHeaders : Html.Html Msg
 locationHeaders =
   let divClass (class, child) = Html.div [HTMLATTR.class class] [Html.text child]
   in
     Html.div [HTMLATTR.class "loc-header-row"] (
+      [ Html.select [HEv.onInput SortByChanged ]
+        [ Html.option [HTMLATTR.value "alphabetically"] [Html.text "alphabetically"]
+        , Html.option [HTMLATTR.value "pressure"] [Html.text "pressure"]
+        ]
+      ] ++
       List.map divClass [
         ("loc-header-cell-img", "Image"),
         ("loc-header-cell-name", "Name"),
         ("loc-header-cell-pressure", "Pressure")
-        ]
+      ]
     )
 
-sortLocations : LocData -> List Location
-sortLocations locdata =
-  case locdata.order of
-    Alphabetic ->
-      List.sortBy .name locdata.locations  
-    Pressure ->
-      List.sortBy .pressure locdata.locations  
-
-   
+locationToString : Location -> String
+locationToString loc =
+  loc.name ++ " " ++ String.fromFloat loc.pressure
 
 view : Model -> Html.Html Msg
 view model =
-  case model of
+  case model.locations of
     Loading ->
       Html.div [] [Html.text "Loading"]
     Failed msg ->
       Html.div [] [Html.text msg]
     Success data ->
       Html.div [HTMLATTR.class "locations"]
-       (List.append [locationHeaders] (List.map locationToHtml (sortLocations data)))
+       (List.append [locationHeaders] (List.map locationToHtml (model.sort data)))
 
 -- DECODERS
 

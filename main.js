@@ -5913,8 +5913,17 @@ var author$project$Main$jsonDataRequest = elm$http$Http$get(
 		expect: A2(elm$http$Http$expectJson, author$project$Main$ReceivedLocations, author$project$Main$locationListDecoder),
 		url: 'http://localhost:8000/sample.json'
 	});
+var elm$core$List$sortBy = _List_sortBy;
 var author$project$Main$init = function (_n0) {
-	return _Utils_Tuple2(author$project$Main$Loading, author$project$Main$jsonDataRequest);
+	return _Utils_Tuple2(
+		{
+			locations: author$project$Main$Loading,
+			sort: elm$core$List$sortBy(
+				function ($) {
+					return $.name;
+				})
+		},
+		author$project$Main$jsonDataRequest);
 };
 var author$project$Main$Tick = function (a) {
 	return {$: 'Tick', a: a};
@@ -6209,31 +6218,63 @@ var author$project$Main$subscr = function (mdl) {
 var author$project$Main$Failed = function (a) {
 	return {$: 'Failed', a: a};
 };
-var author$project$Main$Pressure = {$: 'Pressure'};
 var author$project$Main$Success = function (a) {
 	return {$: 'Success', a: a};
+};
+var author$project$Main$sortFromValue = function (str) {
+	if (str === 'pressure') {
+		return elm$core$List$sortBy(
+			function ($) {
+				return $.pressure;
+			});
+	} else {
+		return elm$core$List$sortBy(
+			function ($) {
+				return $.name;
+			});
+	}
 };
 var elm$core$Platform$Cmd$batch = _Platform_batch;
 var elm$core$Platform$Cmd$none = elm$core$Platform$Cmd$batch(_List_Nil);
 var author$project$Main$update = F2(
 	function (msg, model) {
-		if (msg.$ === 'ReceivedLocations') {
-			if (msg.a.$ === 'Ok') {
-				var locations = msg.a.a;
+		switch (msg.$) {
+			case 'ReceivedLocations':
+				if (msg.a.$ === 'Ok') {
+					var locations = msg.a.a;
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{
+								locations: author$project$Main$Success(locations)
+							}),
+						elm$core$Platform$Cmd$none);
+				} else {
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{
+								locations: author$project$Main$Failed('An error occurred while loading the json.')
+							}),
+						elm$core$Platform$Cmd$none);
+				}
+			case 'Tick':
+				var time = msg.a;
+				return _Utils_Tuple2(model, author$project$Main$jsonDataRequest);
+			default:
+				var value = msg.a;
 				return _Utils_Tuple2(
-					author$project$Main$Success(
-						{locations: locations, order: author$project$Main$Pressure}),
+					_Utils_update(
+						model,
+						{
+							sort: author$project$Main$sortFromValue(value)
+						}),
 					elm$core$Platform$Cmd$none);
-			} else {
-				return _Utils_Tuple2(
-					author$project$Main$Failed('An error occurred while loading the json.'),
-					elm$core$Platform$Cmd$none);
-			}
-		} else {
-			var time = msg.a;
-			return _Utils_Tuple2(model, author$project$Main$jsonDataRequest);
 		}
 	});
+var author$project$Main$SortByChanged = function (a) {
+	return {$: 'SortByChanged', a: a};
+};
 var elm$json$Json$Decode$map = _Json_map1;
 var elm$json$Json$Decode$map2 = _Json_map2;
 var elm$json$Json$Decode$succeed = _Json_succeed;
@@ -6250,6 +6291,8 @@ var elm$virtual_dom$VirtualDom$toHandlerInt = function (handler) {
 	}
 };
 var elm$html$Html$div = _VirtualDom_node('div');
+var elm$html$Html$option = _VirtualDom_node('option');
+var elm$html$Html$select = _VirtualDom_node('select');
 var elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
 var elm$html$Html$text = elm$virtual_dom$VirtualDom$text;
 var elm$json$Json$Encode$string = _Json_wrap;
@@ -6261,6 +6304,39 @@ var elm$html$Html$Attributes$stringProperty = F2(
 			elm$json$Json$Encode$string(string));
 	});
 var elm$html$Html$Attributes$class = elm$html$Html$Attributes$stringProperty('className');
+var elm$html$Html$Attributes$value = elm$html$Html$Attributes$stringProperty('value');
+var elm$html$Html$Events$alwaysStop = function (x) {
+	return _Utils_Tuple2(x, true);
+};
+var elm$virtual_dom$VirtualDom$MayStopPropagation = function (a) {
+	return {$: 'MayStopPropagation', a: a};
+};
+var elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
+var elm$html$Html$Events$stopPropagationOn = F2(
+	function (event, decoder) {
+		return A2(
+			elm$virtual_dom$VirtualDom$on,
+			event,
+			elm$virtual_dom$VirtualDom$MayStopPropagation(decoder));
+	});
+var elm$json$Json$Decode$at = F2(
+	function (fields, decoder) {
+		return A3(elm$core$List$foldr, elm$json$Json$Decode$field, decoder, fields);
+	});
+var elm$html$Html$Events$targetValue = A2(
+	elm$json$Json$Decode$at,
+	_List_fromArray(
+		['target', 'value']),
+	elm$json$Json$Decode$string);
+var elm$html$Html$Events$onInput = function (tagger) {
+	return A2(
+		elm$html$Html$Events$stopPropagationOn,
+		'input',
+		A2(
+			elm$json$Json$Decode$map,
+			elm$html$Html$Events$alwaysStop,
+			A2(elm$json$Json$Decode$map, tagger, elm$html$Html$Events$targetValue)));
+};
 var author$project$Main$locationHeaders = function () {
 	var divClass = function (_n0) {
 		var _class = _n0.a;
@@ -6282,15 +6358,48 @@ var author$project$Main$locationHeaders = function () {
 			[
 				elm$html$Html$Attributes$class('loc-header-row')
 			]),
-		A2(
-			elm$core$List$map,
-			divClass,
+		_Utils_ap(
 			_List_fromArray(
 				[
-					_Utils_Tuple2('loc-header-cell-img', 'Image'),
-					_Utils_Tuple2('loc-header-cell-name', 'Name'),
-					_Utils_Tuple2('loc-header-cell-pressure', 'Pressure')
-				])));
+					A2(
+					elm$html$Html$select,
+					_List_fromArray(
+						[
+							elm$html$Html$Events$onInput(author$project$Main$SortByChanged)
+						]),
+					_List_fromArray(
+						[
+							A2(
+							elm$html$Html$option,
+							_List_fromArray(
+								[
+									elm$html$Html$Attributes$value('alphabetically')
+								]),
+							_List_fromArray(
+								[
+									elm$html$Html$text('alphabetically')
+								])),
+							A2(
+							elm$html$Html$option,
+							_List_fromArray(
+								[
+									elm$html$Html$Attributes$value('pressure')
+								]),
+							_List_fromArray(
+								[
+									elm$html$Html$text('pressure')
+								]))
+						]))
+				]),
+			A2(
+				elm$core$List$map,
+				divClass,
+				_List_fromArray(
+					[
+						_Utils_Tuple2('loc-header-cell-img', 'Image'),
+						_Utils_Tuple2('loc-header-cell-name', 'Name'),
+						_Utils_Tuple2('loc-header-cell-pressure', 'Pressure')
+					]))));
 }();
 var elm$core$String$fromFloat = _String_fromNumber;
 var elm$html$Html$img = _VirtualDom_node('img');
@@ -6350,25 +6459,6 @@ var author$project$Main$locationToHtml = function (loc) {
 					]))
 			]));
 };
-var elm$core$List$sortBy = _List_sortBy;
-var author$project$Main$sortLocations = function (locdata) {
-	var _n0 = locdata.order;
-	if (_n0.$ === 'Alphabetic') {
-		return A2(
-			elm$core$List$sortBy,
-			function ($) {
-				return $.name;
-			},
-			locdata.locations);
-	} else {
-		return A2(
-			elm$core$List$sortBy,
-			function ($) {
-				return $.pressure;
-			},
-			locdata.locations);
-	}
-};
 var elm$core$List$append = F2(
 	function (xs, ys) {
 		if (!ys.b) {
@@ -6378,7 +6468,8 @@ var elm$core$List$append = F2(
 		}
 	});
 var author$project$Main$view = function (model) {
-	switch (model.$) {
+	var _n0 = model.locations;
+	switch (_n0.$) {
 		case 'Loading':
 			return A2(
 				elm$html$Html$div,
@@ -6388,7 +6479,7 @@ var author$project$Main$view = function (model) {
 						elm$html$Html$text('Loading')
 					]));
 		case 'Failed':
-			var msg = model.a;
+			var msg = _n0.a;
 			return A2(
 				elm$html$Html$div,
 				_List_Nil,
@@ -6397,7 +6488,7 @@ var author$project$Main$view = function (model) {
 						elm$html$Html$text(msg)
 					]));
 		default:
-			var data = model.a;
+			var data = _n0.a;
 			return A2(
 				elm$html$Html$div,
 				_List_fromArray(
@@ -6411,7 +6502,7 @@ var author$project$Main$view = function (model) {
 					A2(
 						elm$core$List$map,
 						author$project$Main$locationToHtml,
-						author$project$Main$sortLocations(data))));
+						model.sort(data))));
 	}
 };
 var elm$browser$Browser$External = function (a) {
