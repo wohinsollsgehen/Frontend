@@ -5,6 +5,7 @@ import Html.Events as HEv
 import Http
 import Json.Decode as JSD
 import Time
+import Json.Decode.Pipeline as JSP
 -- import Json
 
 
@@ -14,10 +15,18 @@ main = Browser.element {init = init, update = update, view = view, subscriptions
 
 type alias Flags = { endpoint : String }
 
+type alias Point = { lat : Float, lng : Float }
+
 type alias Location =
   { name : String
   , pressure : Float
   , imgurl : String
+  , location : Point
+  , capacity : Int
+  , time : Time.Posix
+  , visitors : Int
+  , infourl : Maybe String
+  , description : Maybe String
   }
 
 type LocData = Loading | Failed String | Success (List Location)
@@ -121,8 +130,29 @@ pressureDecoder = JSD.field "pressure" JSD.float
 imgurlDecoder : JSD.Decoder String
 imgurlDecoder = JSD.field "image" JSD.string
 
+pointDecoder : JSD.Decoder Point
+pointDecoder =
+  let lat = JSD.field "latitude" JSD.float
+      lng = JSD.field "longitude" JSD.float
+  in JSD.map2 Point lat lng
+
 locationDecoder : JSD.Decoder Location
-locationDecoder = JSD.map3 Location nameDecoder pressureDecoder imgurlDecoder
+locationDecoder = JSD.succeed Location
+                   |> JSP.custom nameDecoder
+                   |> JSP.custom pressureDecoder
+                   |> JSP.custom imgurlDecoder
+                   |> JSP.custom pointDecoder
+                   |> JSP.custom (JSD.succeed 10)
+                   |> JSP.custom (JSD.succeed (Time.millisToPosix 100))
+                   |> JSP.custom (JSD.succeed 100)
+                   |> JSP.custom (JSD.succeed Nothing)
+                   |> JSP.custom (JSD.succeed Nothing)
 
 locationListDecoder : JSD.Decoder (List Location)
 locationListDecoder = JSD.field "locations" (JSD.list locationDecoder)
+
+-- HELPERS
+
+-- Given the clients location as Point an Location returns the distance in m
+distance : Point -> Location -> Float
+distance _ _ = 542

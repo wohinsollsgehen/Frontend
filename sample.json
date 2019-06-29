@@ -1,6 +1,18 @@
-{"locations" :
-  [
-    {"name" : "Muenster", "pressure" : 0.7, "image" : "https://picsum.photos/200"},
-    {"name" : "Space", "pressure" : 0.42, "image" : "https://picsum.photos/200"}
+{
+  "locations": [
+    {
+      "name": "Muenster",
+      "pressure": 0.7,
+      "image": "https://picsum.photos/200",
+      "longitude": 23,
+      "latitude": 43
+    },
+    {
+      "name": "Space",
+      "pressure": 0.42,
+      "image": "https://picsum.photos/200",
+      "longitude": 23,
+      "latitude": 43
+    }
   ]
 }

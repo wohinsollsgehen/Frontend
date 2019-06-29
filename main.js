@@ -4535,9 +4535,9 @@ var author$project$Main$Loading = {$: 'Loading'};
 var author$project$Main$ReceivedLocations = function (a) {
 	return {$: 'ReceivedLocations', a: a};
 };
-var author$project$Main$Location = F3(
-	function (name, pressure, imgurl) {
-		return {imgurl: imgurl, name: name, pressure: pressure};
+var elm$core$Basics$apR = F2(
+	function (x, f) {
+		return f(x);
 	});
 var elm$core$Array$branchFactor = 32;
 var elm$core$Array$Array_elm_builtin = F4(
@@ -4685,10 +4685,6 @@ var elm$core$Array$compressNodes = F2(
 				continue compressNodes;
 			}
 		}
-	});
-var elm$core$Basics$apR = F2(
-	function (x, f) {
-		return f(x);
 	});
 var elm$core$Basics$eq = _Utils_equal;
 var elm$core$Tuple$first = function (_n0) {
@@ -5014,14 +5010,64 @@ var elm$json$Json$Decode$errorToStringHelp = F2(
 			}
 		}
 	});
+var elm$json$Json$Decode$map2 = _Json_map2;
+var NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$custom = elm$json$Json$Decode$map2(elm$core$Basics$apR);
+var author$project$Main$Location = F9(
+	function (name, pressure, imgurl, location, capacity, time, visitors, infourl, description) {
+		return {capacity: capacity, description: description, imgurl: imgurl, infourl: infourl, location: location, name: name, pressure: pressure, time: time, visitors: visitors};
+	});
 var elm$json$Json$Decode$field = _Json_decodeField;
 var elm$json$Json$Decode$string = _Json_decodeString;
 var author$project$Main$imgurlDecoder = A2(elm$json$Json$Decode$field, 'image', elm$json$Json$Decode$string);
 var author$project$Main$nameDecoder = A2(elm$json$Json$Decode$field, 'name', elm$json$Json$Decode$string);
+var author$project$Main$Point = F2(
+	function (lat, lng) {
+		return {lat: lat, lng: lng};
+	});
 var elm$json$Json$Decode$float = _Json_decodeFloat;
+var author$project$Main$pointDecoder = function () {
+	var lng = A2(elm$json$Json$Decode$field, 'longitude', elm$json$Json$Decode$float);
+	var lat = A2(elm$json$Json$Decode$field, 'latitude', elm$json$Json$Decode$float);
+	return A3(elm$json$Json$Decode$map2, author$project$Main$Point, lat, lng);
+}();
 var author$project$Main$pressureDecoder = A2(elm$json$Json$Decode$field, 'pressure', elm$json$Json$Decode$float);
-var elm$json$Json$Decode$map3 = _Json_map3;
-var author$project$Main$locationDecoder = A4(elm$json$Json$Decode$map3, author$project$Main$Location, author$project$Main$nameDecoder, author$project$Main$pressureDecoder, author$project$Main$imgurlDecoder);
+var elm$json$Json$Decode$succeed = _Json_succeed;
+var elm$core$Basics$identity = function (x) {
+	return x;
+};
+var elm$time$Time$Posix = function (a) {
+	return {$: 'Posix', a: a};
+};
+var elm$time$Time$millisToPosix = elm$time$Time$Posix;
+var author$project$Main$locationDecoder = A2(
+	NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$custom,
+	elm$json$Json$Decode$succeed(elm$core$Maybe$Nothing),
+	A2(
+		NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$custom,
+		elm$json$Json$Decode$succeed(elm$core$Maybe$Nothing),
+		A2(
+			NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$custom,
+			elm$json$Json$Decode$succeed(100),
+			A2(
+				NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$custom,
+				elm$json$Json$Decode$succeed(
+					elm$time$Time$millisToPosix(100)),
+				A2(
+					NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$custom,
+					elm$json$Json$Decode$succeed(10),
+					A2(
+						NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$custom,
+						author$project$Main$pointDecoder,
+						A2(
+							NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$custom,
+							author$project$Main$imgurlDecoder,
+							A2(
+								NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$custom,
+								author$project$Main$pressureDecoder,
+								A2(
+									NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$custom,
+									author$project$Main$nameDecoder,
+									elm$json$Json$Decode$succeed(author$project$Main$Location))))))))));
 var elm$json$Json$Decode$list = _Json_decodeList;
 var author$project$Main$locationListDecoder = A2(
 	elm$json$Json$Decode$field,
@@ -5043,9 +5089,6 @@ var elm$core$Basics$composeR = F3(
 		return g(
 			f(x));
 	});
-var elm$core$Basics$identity = function (x) {
-	return x;
-};
 var elm$core$Dict$RBEmpty_elm_builtin = {$: 'RBEmpty_elm_builtin'};
 var elm$core$Dict$empty = elm$core$Dict$RBEmpty_elm_builtin;
 var elm$core$Basics$compare = _Utils_compare;
@@ -6163,10 +6206,6 @@ var elm$core$List$map = F2(
 			_List_Nil,
 			xs);
 	});
-var elm$time$Time$Posix = function (a) {
-	return {$: 'Posix', a: a};
-};
-var elm$time$Time$millisToPosix = elm$time$Time$Posix;
 var elm$time$Time$now = _Time_now(elm$time$Time$millisToPosix);
 var elm$time$Time$onSelfMsg = F3(
 	function (router, interval, state) {
@@ -6285,8 +6324,6 @@ var author$project$Main$SortByChanged = function (a) {
 	return {$: 'SortByChanged', a: a};
 };
 var elm$json$Json$Decode$map = _Json_map1;
-var elm$json$Json$Decode$map2 = _Json_map2;
-var elm$json$Json$Decode$succeed = _Json_succeed;
 var elm$virtual_dom$VirtualDom$toHandlerInt = function (handler) {
 	switch (handler.$) {
 		case 'Normal':
