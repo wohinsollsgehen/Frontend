@@ -1,18 +1,28 @@
 {
   "locations": [
     {
-      "name": "Muenster",
-      "pressure": 0.7,
-      "image": "https://picsum.photos/200",
-      "longitude": 23,
-      "latitude": 43
+      "name": "Universitätsbibliothek - Lesesaal 1",
+      "capacity": 20,
+      "image": "https://www.ub.uni-freiburg.de/fileadmin/_processed_/csm_20150812-2147b_9f95de774d.jpg",
+      "pressure": 0.95,
+      "visitors": 19,
+      "longitude": 7.8449922,
+      "latitude": 47.9944563,
+      "description": "Bacon ipsum dolor amet tri-tip chicken capicola sausage. Corned beef hamburger capicola bresaola, pork loin venison pork short ribs strip steak. Turkey alcatra rump leberkas ham hock pig.",
+      "informationUrl": "https://de.wikipedia.org/wiki/Universit%C3%A4tsbibliothek_Freiburg",
+      "lastTimestamp": 1561833403.8879
     },
     {
-      "name": "Space",
-      "pressure": 0.42,
-      "image": "https://picsum.photos/200",
-      "longitude": 23,
-      "latitude": 43
+      "name": "Baumhaus",
+      "capacity": 23,
+      "image": "https://www.ub.uni-freiburg.de/fileadmin/_processed_/csm_20150812-2147b_9f95de774d.jpg",
+      "pressure": 0.25,
+      "visitors": 19,
+      "longitude": 7.349922,
+      "latitude": 47.144563,
+      "description": "Bacon mburger capicola bresaola, pork loin venison pork short ribs strip steak. Turkey alcatra rump leberkas ham hock pig.",
+      "informationUrl": "https://de.wikipedia.org/wiki/Universit%C3%A4tsbibliothek_Freiburg",
+      "lastTimestamp": 1561833403.8879
     }
   ]
 }

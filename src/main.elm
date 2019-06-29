@@ -121,32 +121,26 @@ view model =
 
 -- DECODERS
 
-nameDecoder : JSD.Decoder String
-nameDecoder = JSD.field "name" JSD.string
-
-pressureDecoder : JSD.Decoder Float
-pressureDecoder = JSD.field "pressure" JSD.float
-
-imgurlDecoder : JSD.Decoder String
-imgurlDecoder = JSD.field "image" JSD.string
-
 pointDecoder : JSD.Decoder Point
 pointDecoder =
   let lat = JSD.field "latitude" JSD.float
       lng = JSD.field "longitude" JSD.float
   in JSD.map2 Point lat lng
 
+posixDecoder : JSD.Decoder Time.Posix
+posixDecoder = JSD.map ((*) 1000 >> truncate >> Time.millisToPosix) JSD.float
+
 locationDecoder : JSD.Decoder Location
 locationDecoder = JSD.succeed Location
-                   |> JSP.custom nameDecoder
-                   |> JSP.custom pressureDecoder
-                   |> JSP.custom imgurlDecoder
+                   |> JSP.required "name" JSD.string
+                   |> JSP.required "pressure" JSD.float
+                   |> JSP.required "image" JSD.string
                    |> JSP.custom pointDecoder
-                   |> JSP.custom (JSD.succeed 10)
-                   |> JSP.custom (JSD.succeed (Time.millisToPosix 100))
-                   |> JSP.custom (JSD.succeed 100)
-                   |> JSP.custom (JSD.succeed Nothing)
-                   |> JSP.custom (JSD.succeed Nothing)
+                   |> JSP.required "capacity" JSD.int
+                   |> JSP.required "lastTimestamp" posixDecoder
+                   |> JSP.required "visitors" JSD.int
+                   |> JSP.optional "infourl" (JSD.nullable JSD.string) Nothing
+                   |> JSP.optional "description" (JSD.nullable JSD.string) Nothing
 
 locationListDecoder : JSD.Decoder (List Location)
 locationListDecoder = JSD.field "locations" (JSD.list locationDecoder)
