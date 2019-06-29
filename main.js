@@ -5908,22 +5908,26 @@ var elm$http$Http$get = function (r) {
 	return elm$http$Http$request(
 		{body: elm$http$Http$emptyBody, expect: r.expect, headers: _List_Nil, method: 'GET', timeout: elm$core$Maybe$Nothing, tracker: elm$core$Maybe$Nothing, url: r.url});
 };
-var author$project$Main$jsonDataRequest = elm$http$Http$get(
-	{
-		expect: A2(elm$http$Http$expectJson, author$project$Main$ReceivedLocations, author$project$Main$locationListDecoder),
-		url: 'http://localhost:8000/sample.json'
-	});
+var author$project$Main$jsonDataRequest = function (endpoint) {
+	return elm$http$Http$get(
+		{
+			expect: A2(elm$http$Http$expectJson, author$project$Main$ReceivedLocations, author$project$Main$locationListDecoder),
+			url: endpoint
+		});
+};
 var elm$core$List$sortBy = _List_sortBy;
 var author$project$Main$init = function (_n0) {
+	var endpoint = _n0.endpoint;
 	return _Utils_Tuple2(
 		{
+			endpoint: endpoint,
 			locations: author$project$Main$Loading,
 			sort: elm$core$List$sortBy(
 				function ($) {
 					return $.name;
 				})
 		},
-		author$project$Main$jsonDataRequest);
+		author$project$Main$jsonDataRequest(endpoint));
 };
 var author$project$Main$Tick = function (a) {
 	return {$: 'Tick', a: a};
@@ -6213,7 +6217,7 @@ var elm$time$Time$every = F2(
 			A2(elm$time$Time$Every, interval, tagger));
 	});
 var author$project$Main$subscr = function (mdl) {
-	return A2(elm$time$Time$every, 15, author$project$Main$Tick);
+	return A2(elm$time$Time$every, 5000, author$project$Main$Tick);
 };
 var author$project$Main$Failed = function (a) {
 	return {$: 'Failed', a: a};
@@ -6234,6 +6238,7 @@ var author$project$Main$sortFromValue = function (str) {
 			});
 	}
 };
+var elm$core$Debug$toString = _Debug_toString;
 var elm$core$Platform$Cmd$batch = _Platform_batch;
 var elm$core$Platform$Cmd$none = elm$core$Platform$Cmd$batch(_List_Nil);
 var author$project$Main$update = F2(
@@ -6250,17 +6255,21 @@ var author$project$Main$update = F2(
 							}),
 						elm$core$Platform$Cmd$none);
 				} else {
+					var err = msg.a.a;
 					return _Utils_Tuple2(
 						_Utils_update(
 							model,
 							{
-								locations: author$project$Main$Failed('An error occurred while loading the json.')
+								locations: author$project$Main$Failed(
+									'An error occurred while loading the json: ' + elm$core$Debug$toString(err))
 							}),
 						elm$core$Platform$Cmd$none);
 				}
 			case 'Tick':
 				var time = msg.a;
-				return _Utils_Tuple2(model, author$project$Main$jsonDataRequest);
+				return _Utils_Tuple2(
+					model,
+					author$project$Main$jsonDataRequest(model.endpoint));
 			default:
 				var value = msg.a;
 				return _Utils_Tuple2(
@@ -6707,7 +6716,14 @@ var elm$url$Url$fromString = function (str) {
 		A2(elm$core$String$dropLeft, 8, str)) : elm$core$Maybe$Nothing);
 };
 var elm$browser$Browser$element = _Browser_element;
+var elm$json$Json$Decode$andThen = _Json_andThen;
 var author$project$Main$main = elm$browser$Browser$element(
 	{init: author$project$Main$init, subscriptions: author$project$Main$subscr, update: author$project$Main$update, view: author$project$Main$view});
 _Platform_export({'Main':{'init':author$project$Main$main(
-	elm$json$Json$Decode$succeed(_Utils_Tuple0))(0)}});}(this));
+	A2(
+		elm$json$Json$Decode$andThen,
+		function (endpoint) {
+			return elm$json$Json$Decode$succeed(
+				{endpoint: endpoint});
+		},
+		A2(elm$json$Json$Decode$field, 'endpoint', elm$json$Json$Decode$string)))(0)}});}(this));

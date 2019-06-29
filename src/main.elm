@@ -12,25 +12,32 @@ main = Browser.element {init = init, update = update, view = view, subscriptions
 
 -- MODEL
 
-type alias Location = {name : String, pressure : Float, imgurl : String}
+type alias Flags = { endpoint : String }
+
+type alias Location =
+  { name : String
+  , pressure : Float
+  , imgurl : String
+  }
 
 type LocData = Loading | Failed String | Success (List Location)
 
-jsonDataRequest = Http.get
-      { url = "http://localhost:8000/sample.json"
+jsonDataRequest endpoint = Http.get
+      { url = endpoint
       , expect = Http.expectJson ReceivedLocations locationListDecoder
       }
 
 type alias Model =
   { sort : List Location -> List Location
   , locations : LocData
+  , endpoint : String
   }
 
-init : () -> (Model, Cmd Msg)
-init _ = ( { sort = List.sortBy .name, locations = Loading }
-         , jsonDataRequest
-         )
-
+init : Flags -> (Model, Cmd Msg)
+init { endpoint } =
+  ( { sort = List.sortBy .name, locations = Loading, endpoint = endpoint }
+  , jsonDataRequest endpoint
+  )
 
 -- UPDATE
 type Msg = ReceivedLocations (Result Http.Error (List Location))
@@ -41,10 +48,10 @@ update msg model =
   case msg of
     ReceivedLocations (Ok locations) ->
           ({model | locations = Success locations }, Cmd.none)
-    ReceivedLocations (Err _) ->
-          ({model | locations = Failed "An error occurred while loading the json." }, Cmd.none)
+    ReceivedLocations (Err err) ->
+          ({model | locations = Failed ("An error occurred while loading the json: " ++ Debug.toString err) }, Cmd.none)
     Tick time ->
-      (model, jsonDataRequest)
+      (model, jsonDataRequest model.endpoint)
     SortByChanged value ->
       ({model | sort = sortFromValue value}, Cmd.none)
 
@@ -52,7 +59,7 @@ update msg model =
 -- SUBSCRIPTIONS
 subscr: Model -> Sub Msg
 subscr mdl =
-  Time.every 15 Tick
+  Time.every 5000 Tick
 
 
 -- VIEW
