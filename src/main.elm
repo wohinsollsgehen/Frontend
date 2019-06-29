@@ -72,15 +72,54 @@ subscr mdl =
 
 
 -- VIEW
+
 locationToHtml : Location -> Html.Html Msg
 locationToHtml loc =
-  Html.div [HTMLATTR.class "loc-row"] [
-    Html.div [HTMLATTR.class "loc-cell-img"]
-             [Html.img [HTMLATTR.attribute "src" loc.imgurl] []],
-    Html.div [HTMLATTR.class "loc-cell-name"] [Html.text loc.name],
-    Html.div [HTMLATTR.class "loc-cell-pressure"]
-             [Html.text (String.fromFloat loc.pressure)]
-  ]
+  let class name = HTMLATTR.class name
+      attribute name = HTMLATTR.attribute name
+  in
+
+    Html.div [class "loc-row"] [
+      -- the image
+      Html.div [class "loc-img"]
+               [Html.img [attribute "src" loc.imgurl] []],
+      -- the rest
+      Html.div []
+        [
+          -- upper
+          Html.div [class "loc-upper"] [
+                     -- Name
+                     Html.div [class "loc-name"] [Html.text loc.name],
+                     -- Progress bar
+                     Html.div [class "loc-progress"] []
+                   ],
+          -- lower
+          Html.div [class "loc-lower"] [
+                     -- info icon
+                     case loc.infourl of
+                       Just url ->
+                         Html.a [attribute "href" url] [
+                           Html.img [attribute "src" "img/info.svg", class "loc-info"] [] 
+                         ]
+                       Nothing ->
+                         Html.div[attribute "src" "img/info.svg", class "loc-info"] []
+                        , 
+                     -- Text
+                     Html.div [class "loc-description"] [Html.text (Maybe.withDefault "" loc.description)],
+                     -- Right side
+                     Html.div [class "loc-right"] [
+                        Html.div [class "loc-location"
+                        ] [
+                          Html.img [attribute "src" "img/map-marker.svg"] [],
+                          Html.text "542m"
+                        ],
+                        Html.button [class "loc-route"] [
+                          Html.text "route"
+                        ]
+                     ]
+                   ]
+        ]
+    ]
 
 sortFromValue : String -> List Location -> List Location
 sortFromValue str = case str of
