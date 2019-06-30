@@ -14,13 +14,20 @@ import Url.Parser
 -- import Json
 
 
-main = Browser.application
+-- main = Browser.application
+--   { init = init
+--   , update = update
+--   , view = toDoc << view
+--   , subscriptions = subscr
+--   , onUrlRequest = \_ -> Noop
+--   , onUrlChange = \_ -> Noop
+--   }
+
+main = Browser.element
   { init = init
   , update = update
-  , view = toDoc << view
+  , view = view
   , subscriptions = subscr
-  , onUrlRequest = \_ -> Noop
-  , onUrlChange = \_ -> Noop
   }
 
 -- MODEL
@@ -65,14 +72,14 @@ type alias Model =
   , position : Maybe Point
   }
 
-init : Flags -> Url.Url -> Browser.Navigation.Key -> (Model, Cmd Msg)
-init { endpoint } url _ =
+init : Flags ->  (Model, Cmd Msg) -- Url.Url -> Browser.Navigation.Key ->
+init { endpoint } =
   let
     float n = Url.Parser.Query.custom n (Maybe.andThen (\x -> x) << List.head << List.map String.toFloat)
     point = Url.Parser.Query.map2 (Maybe.map2 Point) (float "lat") (float "lng")
     parseLoc = Url.Parser.parse (Url.Parser.query point)
   in
-    ( { sort = ByPressure False, locations = Loading, endpoint = endpoint, position = Maybe.andThen (\x -> x) (parseLoc url) }
+    ( { sort = ByPressure False, locations = Loading, endpoint = endpoint, position = Just { lat = 47.997015, lng = 7.8441079 } }
     , jsonDataRequest endpoint
     )
 
@@ -120,11 +127,14 @@ toDoc x = { title = "Wohin solls gehen"
           , body = [x]
           }
 
-locationToHtml : Location -> Html.Html Msg
-locationToHtml loc =
+flip f a b = f b a
+
+locationToHtml : Model -> Location -> Html.Html Msg
+locationToHtml model loc =
   let class name = HTMLATTR.class name
       attribute name = HTMLATTR.attribute name
       style name = HTMLATTR.style name
+      distString = Maybe.map ((\x -> x ++ " m") << String.fromInt << truncate << flip distance loc) model.position
   in
 
     Html.div [class "loc-row"] [
@@ -161,7 +171,7 @@ locationToHtml loc =
                         Html.div [class "loc-location"
                         ] [
                           Html.img [attribute "src" "img/map-marker.svg", class "loc-map-icon"] [],
-                          Html.text "542m"
+                          Html.text (Maybe.withDefault "nicht verfügbar" (distString))
                         ],
                         Html.button [class "loc-route"] [
                           Html.text "route"
@@ -193,7 +203,6 @@ locationHeaders model =
 select : Order -> (Order -> msg) -> List (Order, String) -> Html.Html msg
 select def msg opts =
   let invert (a, b) = (b, a)
-      flip f a b = f b a
       lookup l x = List.head <| List.map Tuple.second <| List.filter (\(k, _) -> k == x) <| l
       toString = Maybe.withDefault "This won't happen" << lookup opts
       fromString = let lu = Dict.fromList <| List.map invert opts
@@ -215,7 +224,7 @@ view model =
       Html.div [] [Html.text msg]
     Success data ->
       Html.div [HTMLATTR.class "locations"]
-       (List.append [locationHeaders model] (List.map locationToHtml (sortBy model.sort data)))
+       (List.append [locationHeaders model] (List.map (locationToHtml model) (sortBy model.sort data)))
 
 -- DECODERS
 
