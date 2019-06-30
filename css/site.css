@@ -1,6 +1,10 @@
+body {
+  background-color: #EFEFEF;
+}
+
 .container {
   width: 75%;
-  background: #3e4446;
+  background: #FFFFFF;
   border-radius: 5px;
   margin-top: 100px;
   padding: 15px;
@@ -10,59 +14,107 @@
   width: 100%;
 } 
 
-.loc-header-row {
-  display: flex;
-  justify-content: space-around;
-  border-bottom-style: solid;
-  border-bottom-color: wheat;
-  border-bottom-width: 1px;
-  padding-top: 5px;
-  padding-bottom: 5px;
-}
-
-.loc-header-cell-img {
-  width: 200px;
-  padding-right: 15px;
-}
-
-.loc-header-cell-name {
-  flex-grow: 1;
-  padding-right: 15px;
-}
-
-.loc-header-cell-pressure {
-  width: 100px;
-
-}
-
 .loc-row {
   display: flex;
-  justify-content: space-around;
+  color: black;
+  margin-bottom: 0.5in;
+  box-shadow: 0.05in 0.05in 0.05in black;
+  background: #f2f0e9;
+}
+
+.loc-img {
+  flex: 0 0 2in;
+  max-height: 2in;
+  max-width: 2in;
+  overflow: hidden;
+}
+
+.loc-img img {
+  height: 100%;
+}
+
+.loc-right {
+  display: flex;
+  flex-direction: column;
+}
+
+.loc-upper {
+  background: #ead9d1;
+  border-bottom-color: #d10913;
+  border-bottom-width: 0.05in;
   border-bottom-style: solid;
-  border-bottom-color: wheat;
-  border-bottom-width: 1px;
-  padding-top: 5px;
-  padding-bottom: 5px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
 }
 
-.loc-cell-img {
-  flex-grow: 0;
-  width: 200px;
-  padding-right: 15px;
-}
-
-.loc-cell-name {
+.loc-name {
+  font-size:24pt;
+  font: Serif;
+  padding-left: 0.5in;
+  padding-right: 0.5in;
+  font-family: 'Lora', serif;
   flex-grow: 1;
-  padding-right: 15px;
-
 }
 
-.loc-cell-pressure {
-  width: 100px;
-  flex-grow: 0;
+.loc-progress-container {
+  width: 1.5in;
+  height: 0.3in;
+  margin-right: 0.1in;
+  border-radius: 5pt;
 
+  border: 1px solid red;
 }
 
-img {
-  border-radius: 5px;
+.loc-progress {
+  height: 100%;
+  border-radius: 5pt;
 }
+
+.loc-lower {
+  display: flex;
+  background: #f2f0e9;
+  padding-right: 0.1in;
+  padding-left: 0.1in;
+  padding-top: 0.1in;
+  padding-bottom: 0.1in;
+  align-items: center;
+  flex-grow: 1;
+}
+
+.loc-info {
+  width: 15pt;
+  height: 15pt;
+}
+
+.loc-map-icon {
+  width: 12pt;
+  height: 12pt;
+}
+
+.loc-description {
+  margin-left: 0.1in;
+  margin-right: 0.1in;
+  flex-grow: 1;
+}
+
+.loc-lower-right {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 1.5in;
+}
+
+.loc-location {
+ color: #3c9a2b;
+ font-size: 13pt;
+ font-family: Sans-Serif, bold;
+}
+
+.loc-route {
+  background-color: #3c9a2b;
+  color: white;
+  width: 100%;
+  border-radius: 4pt; 
+}
+

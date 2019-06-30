@@ -85,10 +85,24 @@ subscr mdl =
 
 -- VIEW
 
+pressureToColor : Float -> String
+pressureToColor pressure = 
+  if pressure < 0.4 then
+    "#3c9a2b"
+  else if pressure < 0.7 then
+    "#FFFF00"
+  else
+    "#d10913"
+
+pressureToWidth : Float -> String
+pressureToWidth pressure =
+  String.fromFloat(pressure * 100) ++ "%"
+
 locationToHtml : Location -> Html.Html Msg
 locationToHtml loc =
   let class name = HTMLATTR.class name
       attribute name = HTMLATTR.attribute name
+      style name = HTMLATTR.style name
   in
 
     Html.div [class "loc-row"] [
@@ -96,14 +110,16 @@ locationToHtml loc =
       Html.div [class "loc-img"]
                [Html.img [attribute "src" loc.imgurl] []],
       -- the rest
-      Html.div []
+      Html.div [class "loc-right"]
         [
           -- upper
           Html.div [class "loc-upper"] [
                      -- Name
                      Html.div [class "loc-name"] [Html.text loc.name],
                      -- Progress bar
-                     Html.div [class "loc-progress"] []
+                     Html.div [class "loc-progress-container"] [
+                         Html.div [class "loc-progress", style "width" (pressureToWidth loc.pressure), style "background-color" (pressureToColor loc.pressure)] []
+                       ]
                    ],
           -- lower
           Html.div [class "loc-lower"] [
@@ -111,18 +127,18 @@ locationToHtml loc =
                      case loc.infourl of
                        Just url ->
                          Html.a [attribute "href" url] [
-                           Html.img [attribute "src" "img/info.svg", class "loc-info"] []
+                           Html.img [attribute "src" "img/info-circle.svg", class "loc-info"] [] 
                          ]
                        Nothing ->
-                         Html.div[attribute "src" "img/info.svg", class "loc-info"] []
+                         Html.img[attribute "src" "img/info-circle.svg", class "loc-info"] []
                         , 
                      -- Text
                      Html.div [class "loc-description"] [Html.text (Maybe.withDefault "" loc.description)],
                      -- Right side
-                     Html.div [class "loc-right"] [
+                     Html.div [class "loc-lower-right"] [
                         Html.div [class "loc-location"
                         ] [
-                          Html.img [attribute "src" "img/map-marker.svg"] [],
+                          Html.img [attribute "src" "img/map-marker.svg", class "loc-map-icon"] [],
                           Html.text "542m"
                         ],
                         Html.button [class "loc-route"] [
@@ -132,7 +148,6 @@ locationToHtml loc =
                    ]
         ]
     ]
-
 
 locationHeaders : Model -> Html.Html Msg
 locationHeaders model =
@@ -150,11 +165,6 @@ locationHeaders model =
   in
     Html.div [HTMLATTR.class "loc-header-row"] (
       [ sortSelect (sortOptions ++ sortByPositionOption)
-      ] ++
-      List.map divClass [
-        ("loc-header-cell-img", "Image"),
-        ("loc-header-cell-name", "Name"),
-        ("loc-header-cell-pressure", "Pressure")
       ]
     )
 
