@@ -1,4 +1,5 @@
 import Browser
+import Browser.Navigation
 import Html
 import Html.Attributes as HTMLATTR
 import Html.Events as HEv
@@ -7,10 +8,20 @@ import Json.Decode as JSD
 import Time
 import Dict
 import Json.Decode.Pipeline as JSP
+import Url
+import Url.Parser.Query
+import Url.Parser
 -- import Json
 
 
-main = Browser.element {init = init, update = update, view = view, subscriptions = subscr}
+main = Browser.application
+  { init = init
+  , update = update
+  , view = toDoc << view
+  , subscriptions = subscr
+  , onUrlRequest = \_ -> Noop
+  , onUrlChange = \_ -> Noop
+  }
 
 -- MODEL
 
@@ -54,16 +65,22 @@ type alias Model =
   , position : Maybe Point
   }
 
-init : Flags -> (Model, Cmd Msg)
-init { endpoint } =
-  ( { sort = ByPressure False, locations = Loading, endpoint = endpoint, position = Nothing }
-  , jsonDataRequest endpoint
-  )
+init : Flags -> Url.Url -> Browser.Navigation.Key -> (Model, Cmd Msg)
+init { endpoint } url _ =
+  let
+    float n = Url.Parser.Query.custom n (Maybe.andThen (\x -> x) << List.head << List.map String.toFloat)
+    point = Url.Parser.Query.map2 (Maybe.map2 Point) (float "lat") (float "lng")
+    parseLoc = Url.Parser.parse (Url.Parser.query point)
+  in
+    ( { sort = ByPressure False, locations = Loading, endpoint = endpoint, position = Maybe.andThen (\x -> x) (parseLoc url) }
+    , jsonDataRequest endpoint
+    )
 
 -- UPDATE
 type Msg = ReceivedLocations (Result Http.Error (List Location))
          | Tick Time.Posix
          | OrderBy Order
+         | Noop
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
@@ -75,6 +92,7 @@ update msg model =
       (model, jsonDataRequest model.endpoint)
     OrderBy order ->
       ({model | sort = order}, Cmd.none)
+    Noop -> (model, Cmd.none)
 
 
 -- SUBSCRIPTIONS
@@ -97,6 +115,10 @@ pressureToColor pressure =
 pressureToWidth : Float -> String
 pressureToWidth pressure =
   String.fromFloat(pressure * 100) ++ "%"
+toDoc : Html.Html msg -> Browser.Document msg
+toDoc x = { title = "Wohin solls gehen"
+          , body = [x]
+          }
 
 locationToHtml : Location -> Html.Html Msg
 locationToHtml loc =
@@ -223,6 +245,34 @@ locationListDecoder = JSD.field "locations" (JSD.list locationDecoder)
 
 -- HELPERS
 
+earthA : Float
+earthA = 6372.8
+
+-- Adapted from https://gist.github.com/Ahrengot/e91881252364ee81b38d2f3487cdfd73
+distLatLon : Float -> Float -> Float -> Float -> Float
+distLatLon lon1 lat1 lon2 lat2 =
+    let
+        earthRadiusInM =
+            6372800
+        dLat =
+            degrees (degrees lat2 - degrees lat1)
+
+        dLon =
+            degrees (degrees lon2 - degrees lon1)
+
+        haversine =
+            (sin <| dLat / 2)
+                * (sin <| dLat / 2)
+                + (cos <| degrees lat1)
+                * (cos <| degrees lat2)
+                * (sin <| dLon / 2)
+                * (sin <| dLon / 2)
+
+        c =
+            2 * (atan2 (sqrt haversine) (sqrt 1 - haversine))
+    in
+        earthRadiusInM * c
+
 -- Given the clients location as Point an Location returns the distance in m
 distance : Point -> Location -> Float
-distance _ _ = 542
+distance from { location } = distLatLon from.lat from.lng location.lat location.lng
