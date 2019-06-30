@@ -11,17 +11,6 @@ import Json.Decode.Pipeline as JSP
 import Url
 import Url.Parser.Query
 import Url.Parser
--- import Json
-
-
--- main = Browser.application
---   { init = init
---   , update = update
---   , view = toDoc << view
---   , subscriptions = subscr
---   , onUrlRequest = \_ -> Noop
---   , onUrlChange = \_ -> Noop
---   }
 
 main = Browser.element
   { init = init
@@ -70,7 +59,7 @@ type alias Model =
   , position : Maybe Point
   }
 
-init : Flags ->  (Model, Cmd Msg) -- Url.Url -> Browser.Navigation.Key ->
+init : Flags ->  (Model, Cmd Msg)
 init { endpoint } =
   let
     float n = Url.Parser.Query.custom n (Maybe.andThen (\x -> x) << List.head << List.map String.toFloat)
@@ -109,7 +98,7 @@ subscr mdl =
 -- VIEW
 
 pressureToColor : Float -> String
-pressureToColor pressure = 
+pressureToColor pressure =
   if pressure < 0.4 then
     "#3c9a2b"
   else if pressure < 0.7 then
@@ -157,11 +146,11 @@ locationToHtml model loc =
                      case loc.infourl of
                        Just url ->
                          Html.a [attribute "href" url] [
-                           Html.img [attribute "src" "img/info-circle.svg", class "loc-info"] [] 
+                           Html.img [attribute "src" "img/info-circle.svg", class "loc-info"] []
                          ]
                        Nothing ->
                          Html.div[class "loc-info"] []
-                        , 
+                        ,
                      -- Text
                      Html.div [class "loc-description"] [Html.text (Maybe.withDefault "" loc.description)],
                      -- Right side
@@ -182,7 +171,7 @@ locationToHtml model loc =
 locationHeaders : Model -> Html.Html Msg
 locationHeaders model =
   let divClass (class, child) = Html.div [HTMLATTR.class class] [Html.text child]
-      sortSelect = select (ByPressure False) OrderBy
+      sortSelect = select model.sort OrderBy
       sortOptions = [ (ByName False, "A-Z")
         , (ByName True, "Z-A")
         , (ByPressure False, "Leer - Voll")
@@ -205,7 +194,7 @@ select def msg opts =
       toString = Maybe.withDefault "This won't happen" << lookup opts
       fromString = let lu = Dict.fromList <| List.map invert opts
                    in Maybe.withDefault def << flip Dict.get lu
-      option (_, name)= Html.option [HTMLATTR.value name] [Html.text name]
+      option (order, name) = Html.option [HTMLATTR.value name, HTMLATTR.selected (order == def)] [Html.text name]
   in Html.select [HEv.onInput (msg << fromString) ] (List.map option opts)
 
 
@@ -249,9 +238,6 @@ locationListDecoder : JSD.Decoder (List Location)
 locationListDecoder = JSD.field "locations" (JSD.list locationDecoder)
 
 -- HELPERS
-
-earthA : Float
-earthA = 6372.8
 
 -- Adapted from https://gist.github.com/Ahrengot/e91881252364ee81b38d2f3487cdfd73
 distLatLon : Float -> Float -> Float -> Float -> Float
