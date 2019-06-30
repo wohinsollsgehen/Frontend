@@ -103,7 +103,7 @@ update msg model =
 -- SUBSCRIPTIONS
 subscr: Model -> Sub Msg
 subscr mdl =
-  Time.every 5000 Tick
+  Time.every 15 Tick
 
 
 -- VIEW
