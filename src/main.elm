@@ -186,7 +186,7 @@ locationHeaders model =
       sortOptions = [ (ByName False, "A-Z")
         , (ByName True, "Z-A")
         , (ByPressure False, "Leer - Voll")
-        , (ByName True, "Voll - Leer")
+        , (ByPressure True, "Voll - Leer")
         ]
       sortByPositionOption
         = Maybe.withDefault
