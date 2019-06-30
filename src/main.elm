@@ -41,9 +41,7 @@ type alias Location =
   , pressure : Float
   , imgurl : String
   , location : Point
-  , capacity : Int
   , time : Time.Posix
-  , visitors : Int
   , infourl : Maybe String
   , description : Maybe String
   }
@@ -243,9 +241,7 @@ locationDecoder = JSD.succeed Location
                    |> JSP.required "pressure" JSD.float
                    |> JSP.required "image" JSD.string
                    |> JSP.custom pointDecoder
-                   |> JSP.required "capacity" JSD.int
                    |> JSP.required "lastTimestamp" posixDecoder
-                   |> JSP.required "visitors" JSD.int
                    |> JSP.optional "infourl" (JSD.nullable JSD.string) Nothing
                    |> JSP.optional "description" (JSD.nullable JSD.string) Nothing
 
