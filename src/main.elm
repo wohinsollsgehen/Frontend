@@ -130,7 +130,7 @@ locationToHtml loc =
                            Html.img [attribute "src" "img/info-circle.svg", class "loc-info"] [] 
                          ]
                        Nothing ->
-                         Html.img[class "loc-info"] []
+                         Html.div[class "loc-info"] []
                         , 
                      -- Text
                      Html.div [class "loc-description"] [Html.text (Maybe.withDefault "" loc.description)],
