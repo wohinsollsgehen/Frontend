@@ -258,7 +258,7 @@ distLatLon : Float -> Float -> Float -> Float -> Float
 distLatLon lon1 lat1 lon2 lat2 =
     let
         earthRadiusInM =
-            6372800
+            63728000
         dLat =
             degrees (degrees lat2 - degrees lat1)
 
