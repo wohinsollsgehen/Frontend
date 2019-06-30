@@ -5,6 +5,7 @@ import Html.Events as HEv
 import Http
 import Json.Decode as JSD
 import Time
+import Dict
 import Json.Decode.Pipeline as JSP
 -- import Json
 
@@ -31,27 +32,38 @@ type alias Location =
 
 type LocData = Loading | Failed String | Success (List Location)
 
+type Order = ByName Bool | ByPressure Bool | ByDistance Point
+
+sortBy : Order -> List Location -> List Location
+sortBy order = case order of
+  ByName False -> List.sortBy .name
+  ByName True -> List.reverse << List.sortBy .name
+  ByPressure False -> List.sortBy .pressure
+  ByPressure True -> List.reverse << List.sortBy .pressure
+  ByDistance p -> List.sortBy (distance p)
+
 jsonDataRequest endpoint = Http.get
       { url = endpoint
       , expect = Http.expectJson ReceivedLocations locationListDecoder
       }
 
 type alias Model =
-  { sort : List Location -> List Location
+  { sort : Order
   , locations : LocData
   , endpoint : String
+  , position : Maybe Point
   }
 
 init : Flags -> (Model, Cmd Msg)
 init { endpoint } =
-  ( { sort = List.sortBy .name, locations = Loading, endpoint = endpoint }
+  ( { sort = ByPressure False, locations = Loading, endpoint = endpoint, position = Nothing }
   , jsonDataRequest endpoint
   )
 
 -- UPDATE
 type Msg = ReceivedLocations (Result Http.Error (List Location))
          | Tick Time.Posix
-         | SortByChanged String
+         | OrderBy Order
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
@@ -61,8 +73,8 @@ update msg model =
           ({model | locations = Failed ("An error occurred while loading the json: " ++ Debug.toString err) }, Cmd.none)
     Tick time ->
       (model, jsonDataRequest model.endpoint)
-    SortByChanged value ->
-      ({model | sort = sortFromValue value}, Cmd.none)
+    OrderBy order ->
+      ({model | sort = order}, Cmd.none)
 
 
 -- SUBSCRIPTIONS
@@ -99,7 +111,7 @@ locationToHtml loc =
                      case loc.infourl of
                        Just url ->
                          Html.a [attribute "href" url] [
-                           Html.img [attribute "src" "img/info.svg", class "loc-info"] [] 
+                           Html.img [attribute "src" "img/info.svg", class "loc-info"] []
                          ]
                        Nothing ->
                          Html.div[attribute "src" "img/info.svg", class "loc-info"] []
@@ -121,20 +133,23 @@ locationToHtml loc =
         ]
     ]
 
-sortFromValue : String -> List Location -> List Location
-sortFromValue str = case str of
-    "pressure" -> List.sortBy .pressure
-    _ ->  List.sortBy .name
 
-locationHeaders : Html.Html Msg
-locationHeaders =
+locationHeaders : Model -> Html.Html Msg
+locationHeaders model =
   let divClass (class, child) = Html.div [HTMLATTR.class class] [Html.text child]
+      sortSelect = select (ByPressure False) OrderBy
+      sortOptions = [ (ByName False, "A-Z")
+        , (ByName True, "Z-A")
+        , (ByPressure False, "Leer - Voll")
+        , (ByName True, "Voll - Leer")
+        ]
+      sortByPositionOption
+        = Maybe.withDefault
+            []
+            (Maybe.map ((\x -> [(x, "Entfernung")]) << ByDistance) model.position)
   in
     Html.div [HTMLATTR.class "loc-header-row"] (
-      [ Html.select [HEv.onInput SortByChanged ]
-        [ Html.option [HTMLATTR.value "alphabetically"] [Html.text "alphabetically"]
-        , Html.option [HTMLATTR.value "pressure"] [Html.text "pressure"]
-        ]
+      [ sortSelect (sortOptions ++ sortByPositionOption)
       ] ++
       List.map divClass [
         ("loc-header-cell-img", "Image"),
@@ -142,6 +157,18 @@ locationHeaders =
         ("loc-header-cell-pressure", "Pressure")
       ]
     )
+
+select : Order -> (Order -> msg) -> List (Order, String) -> Html.Html msg
+select def msg opts =
+  let invert (a, b) = (b, a)
+      flip f a b = f b a
+      lookup l x = List.head <| List.map Tuple.second <| List.filter (\(k, _) -> k == x) <| l
+      toString = Maybe.withDefault "This won't happen" << lookup opts
+      fromString = let lu = Dict.fromList <| List.map invert opts
+                   in Maybe.withDefault def << flip Dict.get lu
+      option (_, name)= Html.option [HTMLATTR.value name] [Html.text name]
+  in Html.select [HEv.onInput (msg << fromString) ] (List.map option opts)
+
 
 locationToString : Location -> String
 locationToString loc =
@@ -156,7 +183,7 @@ view model =
       Html.div [] [Html.text msg]
     Success data ->
       Html.div [HTMLATTR.class "locations"]
-       (List.append [locationHeaders] (List.map locationToHtml (model.sort data)))
+       (List.append [locationHeaders model] (List.map locationToHtml (sortBy model.sort data)))
 
 -- DECODERS
 
