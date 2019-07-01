@@ -11,6 +11,24 @@ import Json.Decode.Pipeline as JSP
 import Url
 import Url.Parser.Query
 import Url.Parser
+import FormatNumber
+import FormatNumber.Locales
+import Basics.Extra exposing (flip)
+
+-- CONSTANTS
+
+distanceLocale : FormatNumber.Locales.Locale
+distanceLocale =
+  { decimals = 0
+  , thousandSeparator = "."
+  , decimalSeparator = ","
+  , negativePrefix = "- "
+  , negativeSuffix = ""
+  , positivePrefix = ""
+  , positiveSuffix = ""
+  }
+
+-- MAIN
 
 main = Browser.element
   { init = init
@@ -62,7 +80,7 @@ type alias Model =
 init : Flags ->  (Model, Cmd Msg)
 init { endpoint } =
   let
-    float n = Url.Parser.Query.custom n (Maybe.andThen (\x -> x) << List.head << List.map String.toFloat)
+    float n = Url.Parser.Query.custom n (Maybe.andThen identity << List.head << List.map String.toFloat)
     point = Url.Parser.Query.map2 (Maybe.map2 Point) (float "lat") (float "lng")
     parseLoc = Url.Parser.parse (Url.Parser.query point)
   in
@@ -114,14 +132,12 @@ toDoc x = { title = "Wohin solls gehen"
           , body = [x]
           }
 
-flip f a b = f b a
-
 locationToHtml : Model -> Location -> Html.Html Msg
 locationToHtml model loc =
   let class name = HTMLATTR.class name
       attribute name = HTMLATTR.attribute name
       style name = HTMLATTR.style name
-      distString = Maybe.map ((\x -> x ++ " m") << String.fromInt << truncate << flip distance loc) model.position
+      distString = Maybe.map (formatMeter << flip distance loc) model.position
   in
 
     Html.div [class "loc-row"] [
@@ -172,30 +188,30 @@ locationHeaders : Model -> Html.Html Msg
 locationHeaders model =
   let divClass (class, child) = Html.div [HTMLATTR.class class] [Html.text child]
       sortSelect = select model.sort OrderBy
-      sortOptions = [ (ByName False, "A-Z")
-        , (ByName True, "Z-A")
-        , (ByPressure False, "Leer - Voll")
-        , (ByPressure True, "Voll - Leer")
+      sortOptions =
+        [ ("A-Z", ByName False)
+        , ("Z-A", ByName True)
+        , ("Leer - Voll", ByPressure False)
+        , ("Voll - Leer", ByPressure True)
         ]
       sortByPositionOption
         = Maybe.withDefault
             []
-            (Maybe.map ((\x -> [(x, "Entfernung")]) << ByDistance) model.position)
+            (Maybe.map ((\x -> [("Entfernung", x)]) << ByDistance) model.position)
   in
     Html.div [HTMLATTR.class "loc-header-row"] (
       [ sortSelect (sortOptions ++ sortByPositionOption)
       ]
     )
 
-select : Order -> (Order -> msg) -> List (Order, String) -> Html.Html msg
+select : a -> (a -> msg) -> List (String, a) -> Html.Html msg
 select def msg opts =
-  let invert (a, b) = (b, a)
-      lookup l x = List.head <| List.map Tuple.second <| List.filter (\(k, _) -> k == x) <| l
-      toString = Maybe.withDefault "This won't happen" << lookup opts
-      fromString = let lu = Dict.fromList <| List.map invert opts
+  let fromString = let lu = Dict.fromList opts
                    in Maybe.withDefault def << flip Dict.get lu
-      option (order, name) = Html.option [HTMLATTR.value name, HTMLATTR.selected (order == def)] [Html.text name]
-  in Html.select [HEv.onInput (msg << fromString) ] (List.map option opts)
+      option (name, order) =
+        Html.option [HTMLATTR.value name, HTMLATTR.selected (order == def)]
+                    [Html.text name]
+  in Html.select [ HEv.onInput (msg << fromString) ] (List.map option opts)
 
 
 locationToString : Location -> String
@@ -246,10 +262,10 @@ distLatLon lon1 lat1 lon2 lat2 =
         earthRadiusInM =
             63728000
         dLat =
-            degrees (degrees lat2 - degrees lat1)
+            degrees ( lat2 -  lat1)
 
         dLon =
-            degrees (degrees lon2 - degrees lon1)
+            degrees ( lon2 -  lon1)
 
         haversine =
             (sin <| dLat / 2)
@@ -267,3 +283,13 @@ distLatLon lon1 lat1 lon2 lat2 =
 -- Given the clients location as Point an Location returns the distance in m
 distance : Point -> Location -> Float
 distance from { location } = distLatLon from.lat from.lng location.lat location.lng
+
+
+formatMeter : Float -> String
+formatMeter dist =
+  if dist > 1000 then
+    ( FormatNumber.format {distanceLocale | decimals = 2}
+      <| dist / 1000
+    ) ++ " km"
+  else
+    (FormatNumber.format distanceLocale dist) ++ " m"
